@@ -38,6 +38,7 @@ int exec_cmd(int fd_in, int fd_out, int to_close, char **argv)
 		ft_putstr_fd2("cant fork\n");
    	if (pid == 0)
 	{
+		// (void)to_close;
 		if (to_close >0)
 			close(to_close);
 		dup2(fd_in, STDIN_FILENO);
@@ -47,14 +48,13 @@ int exec_cmd(int fd_in, int fd_out, int to_close, char **argv)
 		close(fd_in);
 		close(fd_out);
 	}
-	waitpid(pid, NULL, 0);
 	return (0);
 }
 
 int main(int argc, char** argv, char** envp)
 {
 	//set default fds for cmd;
-	int fds[2]={0, 1};
+	int fds[2]={STDIN_FILENO, STDOUT_FILENO};
 	int pipe_fd[2];
 	int i = 0;
 
@@ -75,10 +75,12 @@ int main(int argc, char** argv, char** envp)
 			exec_cmd(fds[0], fds[1], pipe_fd[0], argv);
 			argv = &argv[i + 1];
 			//close read side of pipe before assign new fd for next cmd;
-			close(fds[0]);
+			if (fds[0] != 0)
+				close(fds[0]);
 			fds[0] = pipe_fd[0];
 			//close write side in parent;
-			close(fds[1]);
+			if (fds[1] != 1)
+				close(fds[1]);
 			i = -1;
 		}
 
@@ -92,9 +94,14 @@ int main(int argc, char** argv, char** envp)
 				argv[i] = NULL;
 			exec_cmd(fds[0], fds[1], -1, argv);
 			//close read side in parent;
-			close(fds[0]);
+			if (fds[0] != 0)
+				close(fds[0]);
+			fds[0] = 0;
+			fds[1] = 1;
 			argv = &argv[i + 1];
 			i = -1;
+			while(waitpid(-1, NULL, 0) > 0)
+			{}
 		}
 		i++;
 	}
