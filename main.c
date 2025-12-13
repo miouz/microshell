@@ -101,7 +101,7 @@ int main(int argc, char** argv, char** envp)
 			argv = &argv[i + 1];
 			i = -1;
 			while(waitpid(-1, NULL, 0) > 0)
-			{}
+				continue ;
 		}
 		i++;
 	}
