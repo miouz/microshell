@@ -69,18 +69,12 @@ int exec_cmd(char **argv, int fd_in, int fd_out, int fd_to_close)
 			ft_putstr_fd2("error: cannot execute ");
 			ft_putstr_fd2(argv[0]);
 			ft_putstr_fd2("\n");
-			if (fd_in != -1)
-				close(fd_in);
-			if (fd_out != -1)
-				close(fd_out);
-			if (fd_to_close != -1)
-				close(fd_to_close);
+			close(STDIN_FILENO);
+			close(STDOUT_FILENO);
 			exit(EXIT_FAILURE);
 		}
-
 	}
 	return EXIT_SUCCESS;
-	
 }
 
 int main(int argc, char **argv, char **envp)
@@ -110,7 +104,8 @@ int main(int argc, char **argv, char **envp)
 			//give current read to next cmd;
 			fds[0] = pipefd[0];
 			//close current write;
-			close(fds[1]);
+			if (fds[1]!= -1)
+				close(fds[1]);
 			argv = &argv[i + 1];
 			i = -1;
 		}
