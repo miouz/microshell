@@ -40,16 +40,17 @@ int ft_cd(char **argv)
 
 int exec_cmd(char **argv, int fd_in, int fd_out, int fd_to_close)
 {
+	if (!argv || !argv[0])
+		return EXIT_FAILURE;
 	if (argv && strcmp(argv[0], "cd") == 0)
 		return (ft_cd(argv));
-	pid_t pid;
 
-	pid = fork();
+	pid_t pid = fork();
 	if (pid < 0)
 		msg_exit();
 	if (pid == 0)
 	{
-		if (fd_in != STDIN_FILENO)
+		if (fd_in != -1)
 		{
 			if (dup2(fd_in, STDIN_FILENO) < 0)
 				msg_exit();
@@ -68,7 +69,7 @@ int exec_cmd(char **argv, int fd_in, int fd_out, int fd_to_close)
 			ft_putstr_fd2("error: cannot execute ");
 			ft_putstr_fd2(argv[0]);
 			ft_putstr_fd2("\n");
-			if (fd_in != STDIN_FILENO)
+			if (fd_in != -1)
 				close(fd_in);
 			if (fd_out != -1)
 				close(fd_out);
@@ -89,11 +90,10 @@ int main(int argc, char **argv, char **envp)
 
 	env = envp;
 	int i = 0;
-	int fds[2] = {STDIN_FILENO, STDOUT_FILENO};
+	int fds[2] = {-1, -1};
 	int pipefd[2];
 
 	argv++;
-
 	while (argv[i])
 	{
 		//pipe or first cmd;
@@ -105,7 +105,7 @@ int main(int argc, char **argv, char **envp)
 			fds[1] = pipefd[1];
 			exec_cmd(argv, fds[0], fds[1], pipefd[0]);
 			//close last read;
-			if (fds[0] != STDIN_FILENO)
+			if (fds[0] != -1)
 				close(fds[0]);
 			//give current read to next cmd;
 			fds[0] = pipefd[0];
@@ -125,12 +125,10 @@ int main(int argc, char **argv, char **envp)
 			i = -1;
 			while(waitpid(-1, NULL, 0) > 0)
 				continue;
-			if (fds[1] != STDOUT_FILENO)
-				close(fds[1]);
-			if (fds[0] != STDIN_FILENO)
+			if (fds[0] != -1)
 				close(fds[0]);
-			fds[0] = STDIN_FILENO;
-			fds[1] = STDOUT_FILENO;
+			fds[0] = -1;
+			fds[1] = -1;
 		}
 		i++;
 	}
